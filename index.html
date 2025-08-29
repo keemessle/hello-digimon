@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko-KR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>디지몬 도감</title>
+    <link rel="shortcut icon" href="./assets/favicon.ico" />
+    <link rel="stylesheet" href="./src/styles/reset.css" />
+    <link rel="stylesheet" href="./src/styles/style.css" />
+  </head>
+  <body>
+    <header class="main-header">
+      <h1><img src="/assets/DIGIMON.png" class="h1-img" /></h1>
+      <audio></audio>
+    </header>
+
+    <main>
+      <section class="cards">
+        <header class="cards-header">
+          <div class="title-wrap">
+            <h2 class="cards-title">
+              <img src="/assets/digimon guide.png" class="h2-img" />
+            </h2>
+            <button>X</button>
+          </div>
+
+          <!-- 검색창 -->
+          <div class="search-wrap">
+            <select name="" id="">
+              <!-- <option value=""></option> -->
+            </select>
+            <form action="">
+              <label for="search">
+                <input id="search" type="search" placeholder="Search..." />
+              </label>
+            </form>
+          </div>
+        </header>
+
+        <ul class="card-list">
+          <!-- js로 api를 호출해 figure 태그로 데이터를 하나씩 불러올 예정 -->
+        </ul>
+      </section>
+
+      <!-- 상세보기 모달창 -->
+      <dialog>
+        <figure>
+          <img src="" alt="" />
+          <figcaption>
+            <h3><!-- data.name --></h3>
+            <ul>
+              <!-- data.level, skill -->
+            </ul>
+          </figcaption>
+        </figure>
+      </dialog>
+    </main>
+    <footer></footer>
+
+    <script src="./src/main.js"></script>
+  </body>
+</html>

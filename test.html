@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>디지몬 도감 (Vanilla JS)</title>
+    <style>
+      :root {
+        --bg: #0e5861; /* 페이지 배경 */
+        --panel: #0b2f33; /* 보드 배경 */
+        --panel-2: #0f3c42;
+        --accent: #24c1bd;
+        --text: #e7f6f6;
+        --muted: #9ec8c9;
+        --card: #0f3f46;
+        --grid: #0a2632;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      /* Frame */
+      .dex {
+        width: min(1100px, 95vw);
+        height: min(720px, 90vh);
+        background: linear-gradient(
+          180deg,
+          var(--panel) 0%,
+          var(--panel-2) 100%
+        );
+        border: 3px solid #0a2023;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        overflow: hidden;
+        position: relative;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid #0b2f33;
+        background: radial-gradient(
+            130px 50px at 0% 0%,
+            rgba(36, 193, 189, 0.15),
+            transparent
+          ),
+          radial-gradient(
+            130px 50px at 100% 0%,
+            rgba(36, 193, 189, 0.15),
+            transparent
+          );
+      }
+      header h1 {
+        font-size: 18px;
+        letter-spacing: 0.5px;
+        margin: 0;
+        font-weight: 700;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        padding: 10px 16px;
+        align-items: center;
+        border-bottom: 1px solid #0b2f33;
+      }
+      .toolbar input,
+      .toolbar select {
+        background: #0a2c30;
+        color: var(--text);
+        border: 1px solid #104e55;
+        outline: none;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      .toolbar input {
+        flex: 1;
+      }
+      .toolbar button {
+        background: #0a2c30;
+        color: var(--muted);
+        border: 1px dashed #104e55;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .toolbar .count {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* Grid */
+      .grid-wrap {
+        position: relative;
+        height: 100%;
+      }
+      .grid {
+        list-style: none;
+        margin: 0;
+        padding: 14px;
+        height: 100%;
+        overflow: auto;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        background: repeating-linear-gradient(
+          0deg,
+          var(--grid),
+          var(--grid) 10px,
+          #0b3040 10px,
+          #0b3040 20px
+        );
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid #0b5c62;
+        border-radius: 10px;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.08s ease, box-shadow 0.1s ease;
+        overflow: hidden;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+      }
+      .thumb {
+        aspect-ratio: 1/1;
+        width: 100%;
+        display: grid;
+        place-items: center;
+        background: #0a2e35;
+      }
+      .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .name {
+        font-size: 14px;
+        padding: 8px 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-top: 1px solid #0b5c62;
+      }
+      .lvl {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: #0a2830;
+        border: 1px solid #0e7076;
+        color: var(--muted);
+      }
+
+      /* Loading / Empty */
+      .empty,
+      .loading {
+        color: var(--muted);
+        display: grid;
+        place-items: center;
+        height: 100%;
+        font-size: 14px;
+      }
+
+      /* Modal */
+      dialog {
+        width: min(540px, 92vw);
+        border: none;
+        padding: 0;
+        background: #0c2d33;
+        color: var(--text);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .modal {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 16px;
+        padding: 16px;
+      }
+      .modal .cover {
+        border-radius: 10px;
+        overflow: hidden;
+        background: #0a2e35;
+        border: 1px solid #0e7076;
+      }
+      .modal .cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .modal h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 8px 0 12px;
+      }
+      .chip {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #0a2830;
+        border: 1px solid #0e7076;
+        color: var(--muted);
+      }
+      .skills {
+        background: #0a2e35;
+        border: 1px solid #0e7076;
+        border-radius: 10px;
+        padding: 10px;
+        line-height: 1.6;
+        font-size: 14px;
+      }
+      .modal .actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 12px 16px;
+        border-top: 1px solid #0b3c40;
+      }
+      .btn {
+        background: #11494f;
+        color: var(--text);
+        border: none;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+
+      /* Small helpers */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dex" role="application" aria-label="디지몬 도감">
+      <header>
+        <h1>디지몬 도감</h1>
+      </header>
+
+      <div class="toolbar">
+        <label class="sr-only" for="q">이름 검색</label>
+        <input id="q" placeholder="이름 검색 (예: Agumon)" />
+        <label class="sr-only" for="level">레벨 필터</label>
+        <select id="level">
+          <option value="">전체 레벨</option>
+          <option>Baby I</option>
+          <option>Baby II</option>
+          <option>In Training</option>
+          <option>Rookie</option>
+          <option>Champion</option>
+          <option>Ultimate</option>
+          <option>Mega</option>
+          <option>Armor</option>
+          <option>Hybrid</option>
+        </select>
+        <button id="reset">초기화</button>
+        <span class="count" id="count">0마리</span>
+      </div>
+
+      <div class="grid-wrap">
+        <div id="state" class="loading">불러오는 중…</div>
+        <ul id="grid" class="grid" hidden></ul>
+      </div>
+
+      <!-- Modal -->
+      <dialog id="dlg">
+        <div class="modal">
+          <div class="cover"><img id="dlg-img" alt="" /></div>
+          <div>
+            <h2 id="dlg-title">-</h2>
+            <div class="meta" id="dlg-meta"></div>
+            <div class="skills">
+              <strong>필살기</strong>
+              <ul
+                id="dlg-skills"
+                style="padding-left: 18px; margin: 0.2rem 0 0"
+              ></ul>
+            </div>
+          </div>
+        </div>
+        <div class="actions"><button class="btn" id="close">닫기</button></div>
+      </dialog>
+    </div>
+
+    <template id="card-tpl">
+      <li class="card" tabindex="0" role="button" aria-label="디지몬 카드">
+        <span class="lvl"></span>
+        <div class="thumb"><img alt="" loading="lazy" /></div>
+        <div class="name"></div>
+      </li>
+    </template>
+
+    <script>
+      // ✅ API: 디지몬 상세 정보(레벨/스킬 포함)를 지원하는 digi-api.com 사용
+      const API = "https://digi-api.com/api/v1";
+
+      const els = {
+        grid: document.getElementById("grid"),
+        state: document.getElementById("state"),
+        q: document.getElementById("q"),
+        level: document.getElementById("level"),
+        count: document.getElementById("count"),
+        reset: document.getElementById("reset"),
+        dlg: document.getElementById("dlg"),
+        dlgImg: document.getElementById("dlg-img"),
+        dlgTitle: document.getElementById("dlg-title"),
+        dlgMeta: document.getElementById("dlg-meta"),
+        dlgSkills: document.getElementById("dlg-skills"),
+        close: document.getElementById("close"),
+        tpl: document.getElementById("card-tpl"),
+      };
+
+      let raw = []; // 전체 데이터(간략 목록)
+      let view = []; // 필터/검색 후 데이터
+
+      // 초기 로드
+      init();
+      async function init() {
+        try {
+          els.state.hidden = false;
+          els.grid.hidden = true;
+          els.state.textContent = "불러오는 중…";
+          // 목록(페이지당 150개 정도; 필요시 늘리기)
+          const list = await fetchJSON(`${API}/digimon?page=0&pageSize=200`);
+          // API 응답 형태: { content: [ {id, name, images:[{href}], levels:[{id, level}] , ...} ] }
+          raw = (list.content || []).map((x) => ({
+            id: x.id,
+            name: x.name,
+            img: (x.images && x.images[0] && x.images[0].href) || "",
+            levels: (x.levels || []).map((l) => l.level),
+          }));
+          view = raw.slice();
+          render();
+          bind();
+        } catch (err) {
+          console.error(err);
+          els.state.textContent = "불러오기 실패 😢 잠시 후 다시 시도하세요.";
+        }
+      }
+
+      function bind() {
+        // 검색 (디바운스)
+        let t;
+        els.q.addEventListener("input", (e) => {
+          clearTimeout(t);
+          t = setTimeout(applyFilters, 180);
+        });
+        // 레벨 필터
+        els.level.addEventListener("change", applyFilters);
+        // 초기화
+        els.reset.addEventListener("click", () => {
+          els.q.value = "";
+          els.level.value = "";
+          applyFilters();
+        });
+        // 모달 닫기
+        els.close.addEventListener("click", () => els.dlg.close());
+        els.dlg.addEventListener("close", () => (els.dlg.returnValue = ""));
+      }
+
+      function applyFilters() {
+        const q = els.q.value.trim().toLowerCase();
+        const lvl = els.level.value;
+        view = raw.filter((x) => {
+          const okQ = !q || x.name.toLowerCase().includes(q);
+          const okL = !lvl || (x.levels || []).includes(lvl);
+          return okQ && okL;
+        });
+        render();
+      }
+
+      function render() {
+        els.grid.innerHTML = "";
+        if (!view.length) {
+          els.state.hidden = false;
+          els.grid.hidden = true;
+          els.state.textContent = "결과가 없습니다.";
+          els.count.textContent = "0마리";
+          return;
+        }
+        els.state.hidden = true;
+        els.grid.hidden = false;
+        const frag = document.createDocumentFragment();
+        view.forEach((item) => {
+          const li = els.tpl.content.firstElementChild.cloneNode(true);
+          li.querySelector(".name").textContent = item.name;
+          li.querySelector("img").src = item.img || "";
+          li.querySelector("img").alt = item.name;
+          li.querySelector(".lvl").textContent = item.levels[0] || "";
+          li.addEventListener("click", () => openModal(item));
+          li.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openModal(item);
+            }
+          });
+          frag.appendChild(li);
+        });
+        els.grid.appendChild(frag);
+        els.count.textContent = `${view.length}마리`;
+      }
+
+      async function openModal(item) {
+        try {
+          // 상세 조회 (스킬/속성/레벨 확정)
+          const detail = await fetchJSON(`${API}/digimon/${item.id}`);
+          const img =
+            (detail.images && detail.images[0] && detail.images[0].href) ||
+            item.img;
+          const levels = (detail.levels || []).map((l) => l.level);
+          const attrs = (detail.attributes || []).map((a) => a.attribute);
+          const types = (detail.types || []).map((t) => t.type);
+          const fields = (detail.fields || []).map((f) => f.field);
+          const skills = (detail.skills || [])
+            .map((s) => s?.skill || s?.name || "")
+            .filter(Boolean);
+
+          els.dlgImg.src = img;
+          els.dlgImg.alt = item.name;
+          els.dlgTitle.textContent = item.name;
+
+          els.dlgMeta.innerHTML = "";
+          [...levels, ...attrs, ...types, ...fields]
+            .slice(0, 6)
+            .forEach((txt) => {
+              const span = document.createElement("span");
+              span.className = "chip";
+              span.textContent = txt;
+              els.dlgMeta.appendChild(span);
+            });
+
+          els.dlgSkills.innerHTML = "";
+          if (skills.length) {
+            skills.slice(0, 8).forEach((k) => {
+              const li = document.createElement("li");
+              li.textContent = k;
+              els.dlgSkills.appendChild(li);
+            });
+          } else {
+            const li = document.createElement("li");
+            li.textContent = "스킬 정보가 없습니다.";
+            els.dlgSkills.appendChild(li);
+          }
+
+          if (!els.dlg.open) els.dlg.showModal();
+        } catch (err) {
+          console.error(err);
+          alert("상세 정보를 불러오지 못했습니다.");
+        }
+      }
+
+      async function fetchJSON(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status + " " + res.statusText);
+        return await res.json();
+      }
+    </script>
+  </body>
+</html>
